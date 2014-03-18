@@ -46,6 +46,8 @@ namespace NRAP
         [KSPField(isPersistant = true)]
         private int size = 1;
         [KSPField(isPersistant = true)]
+        public float baseMass = 0;
+        [KSPField(isPersistant = true)]
         private float height = 1f, top = 0, bottom = 0;
         [KSPField(isPersistant = true)]
         private float currentBottom = 0, currentTop = 0;
@@ -233,7 +235,8 @@ namespace NRAP
                 if (!initiated)
                 {
                     initiated = true;
-                    this.mass = this.part.mass.ToString();
+                    baseMass = this.part.mass;
+                    this.mass = baseMass.ToString();
                     try
                     {
                         size = GetId(this.baseDiameter);
@@ -285,8 +288,10 @@ namespace NRAP
 
         private void Window(int id)
         {
+            GUI.DragWindow(new Rect(0, 0, 300, 30));
             GUILayout.BeginVertical();
             GUILayout.Space(5);
+
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
@@ -295,24 +300,39 @@ namespace NRAP
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
+
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
             mass = GUILayout.TextField(mass, 10, skins.textField, GUILayout.Width(125));
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
+
             if (GUILayout.Button("Apply", skins.button, GUILayout.Width(60))) { if (CheckRange(float.Parse(mass), minMass, maxMass)) { float.TryParse(mass, out this.part.mass); } }
             GUILayout.EndHorizontal();
+
             GUILayout.Label("Current mass: " + this.part.mass.ToString() + "t", skins.label);
             GUILayout.Space(10);
+
             GUILayout.Label("Diameter (m): " + GetSize(size), skins.label);
             size = (int)GUILayout.HorizontalSlider(size, 0, 4, skins.horizontalSlider, skins.horizontalSliderThumb);
             width = GetSize(size) /baseDiameter;
+
             GUILayout.Label("Height multiplier: " + height, skins.label);
             height = GUILayout.HorizontalSlider(height, minHeight, maxHeight, skins.horizontalSlider, skins.horizontalSliderThumb);         
             GUILayout.Space(10);
+
+            if (GUILayout.Button("Reset to defaults", skins.button))
+            {
+                this.part.mass = baseMass;
+                this.mass = baseMass.ToString();
+                size = GetId(baseDiameter);
+                width = 1;
+                height = 1;
+            }
+
             if (GUILayout.Button("Close", skins.button)) { this.visible = false; }
+
             GUILayout.EndVertical();
-            GUI.DragWindow();
         }
         #endregion
     }
