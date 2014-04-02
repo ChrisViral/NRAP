@@ -124,7 +124,7 @@ namespace NRAP
                         }
                     }
                 }
-                if (part.findAttachNode("bottom") != null && part.findAttachNode("bottom").attachedPart != null)
+                if (part.findAttachNode("bottom") != null)
                 {
                     AttachNode bottomNode = part.findAttachNode("bottom");
                     float originalBottom = bottomNode.position.y;
@@ -317,7 +317,7 @@ namespace NRAP
             size = (int)GUILayout.HorizontalSlider(size, 0, 4, skins.horizontalSlider, skins.horizontalSliderThumb);
             width = GetSize(size) /baseDiameter;
 
-            GUILayout.Label("Height multiplier: " + height, skins.label);
+            GUILayout.Label("Height multiplier: " + height.ToString("0.000"), skins.label);
             height = GUILayout.HorizontalSlider(height, minHeight, maxHeight, skins.horizontalSlider, skins.horizontalSliderThumb);         
             GUILayout.Space(10);
 
