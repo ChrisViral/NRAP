@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 
 /* NRAP Test Weights is licensed under CC-BY-SA. All Rights for the original mod and for attribution 
@@ -8,35 +9,22 @@ using UnityEngine;
 
 namespace NRAP
 {
-    public static class PartExtensions
-    {
-        public static List<Part> GetAllChildren(this Part part)
-        {
-            if (part.children.Count > 0)
-            {
-                List<Part> children = new List<Part>(part.children);
-                part.children.ForEach(p => children.AddRange(p.GetAllChildren()));
-                return children;
-            }
-            return new List<Part>();
-        }
-    }
-
-    public class ModuleTestWeight : PartModule
-    {
-        
+    public class ModuleTestWeight : PartModule, IPartCostModifier
+    {      
         #region KSPFields
         [KSPField]
         public float maxMass = 100f;
-        [KSPField]
+        [KSPField(isPersistant = true)]
         public float minMass = 0.01f;
         [KSPField]
         public float maxHeight = 5f;
         [KSPField]
         public float minHeight = 0.2f;
+        [KSPField]
+        public float weightCost = 0.1f;
         [KSPField(isPersistant = true)]
         public float baseDiameter = 1.25f;
-        [KSPField(isPersistant = true, guiActive = true, guiFormat = "0.###", guiName = "Current mass", guiUnits = "t", guiActiveEditor = true)]
+        [KSPField(isPersistant = true, guiActive = true, guiFormat = "0.###", guiName = "Total mass", guiUnits = "t", guiActiveEditor = true)]
         public float currentMass = 0;
         #endregion
 
@@ -55,21 +43,8 @@ namespace NRAP
         public bool initiated = false;
         #endregion
 
-        #region Propreties
-        private GUIStyle RedLabel
-        {
-            get
-            {
-                GUIStyle style = new GUIStyle(skins.label);
-                style.normal.textColor = XKCDColors.Red;
-                style.hover.textColor = XKCDColors.Red;
-                return style;
-            }
-        }
-        #endregion
-
         #region Fields
-        private int Id = Guid.NewGuid().GetHashCode();
+        private int id = Guid.NewGuid().GetHashCode();
         private Rect window = new Rect();
         private bool visible = false;
         private readonly Dictionary<int, float> sizes = new Dictionary<int, float>(5)
@@ -99,18 +74,27 @@ namespace NRAP
         #endregion
 
         #region Methods
+        private bool CheckParentNode(AttachNode node)
+        {
+            return node.attachedPart != null && part.parent != null && node.attachedPart == part.parent;
+        }
+
         private void UpdateSize()
         {
+            AttachNode topNode = null, bottomNode = null;
+            bool hasTopNode = part.TryGetAttachNodeById("top", out topNode);
+            bool hasBottomNode = part.TryGetAttachNodeById("bottom", out bottomNode);
             float radialFactor = baseRadial * width;
             float heightFactor = baseHeight * height;
             float originalX = this.part.transform.GetChild(0).localScale.x;
             float originalY = this.part.transform.GetChild(0).localScale.y;
             this.part.transform.GetChild(0).localScale = new Vector3(radialFactor, heightFactor, radialFactor);
+
+            //If part is root part
             if ((HighLogic.LoadedSceneIsEditor && this.part == EditorLogic.SortedShipList[0]) || (HighLogic.LoadedSceneIsFlight && this.vessel.rootPart == this.part))
             {
-                if (part.findAttachNode("top") != null)
+                if (hasTopNode)
                 {
-                    AttachNode topNode = part.findAttachNode("top");
                     float originalTop = topNode.position.y;
                     topNode.position.y = top * height;
                     currentTop = topNode.position.y;
@@ -118,15 +102,10 @@ namespace NRAP
                     {
                         float topDifference = currentTop - originalTop;
                         topNode.attachedPart.transform.Translate(0, topDifference, 0, part.transform);
-                        if (part.findAttachNode("top").attachedPart.GetAllChildren().Count > 0)
-                        {
-                            topNode.attachedPart.GetAllChildren().ForEach(p => p.transform.Translate(0, topDifference, 0, part.transform));
-                        }
                     }
                 }
-                if (part.findAttachNode("bottom") != null)
+                if (hasBottomNode)
                 {
-                    AttachNode bottomNode = part.findAttachNode("bottom");
                     float originalBottom = bottomNode.position.y;
                     bottomNode.position.y = bottom * height;
                     currentBottom = bottomNode.position.y;
@@ -134,68 +113,73 @@ namespace NRAP
                     {
                         float bottomDifference = currentBottom - originalBottom;
                         bottomNode.attachedPart.transform.Translate(0, bottomDifference, 0, part.transform);
-                        if (part.findAttachNode("bottom").attachedPart.GetAllChildren().Count > 0)
-                        {
-                            bottomNode.attachedPart.GetAllChildren().ForEach(p => p.transform.Translate(0, bottomDifference, 0, part.transform));
-                        }
                     }
                 }
             }
-            else if (part.findAttachNode("bottom") != null && part.findAttachNode("bottom").attachedPart != null && part.parent != null && part.findAttachNode("bottom").attachedPart == part.parent)
+
+            //If parent part is attached to bottom node
+            else if (hasBottomNode && CheckParentNode(bottomNode))
             {
-                AttachNode bottomNode = part.findAttachNode("bottom");
                 float originalBottom = bottomNode.position.y;
                 bottomNode.position.y = bottom * height;
                 currentBottom = bottomNode.position.y;
                 float bottomDifference = currentBottom - originalBottom;
                 part.transform.Translate(0, -bottomDifference, 0, part.transform);
-                if (part.findAttachNode("top") != null)
+                if (hasTopNode)
                 {
-                    AttachNode topNode = part.findAttachNode("top");
                     float originalTop = topNode.position.y;
                     topNode.position.y = top * height;
                     currentTop = topNode.position.y;
                     float topDifference = currentTop - originalTop;
-                    if (part.GetAllChildren().Count > 0) { part.GetAllChildren().ForEach(p => p.transform.Translate(0, -(bottomDifference - topDifference), 0, part.transform)); }
+                    topNode.attachedPart.transform.Translate(0, -(bottomDifference - topDifference), 0, part.transform);
                 }
             }
-            else if (part.findAttachNode("top") != null && part.findAttachNode("top").attachedPart != null && part.parent != null && part.findAttachNode("top").attachedPart == part.parent)
+
+            //If parent part is attached to top node
+            else if (hasTopNode && CheckParentNode(topNode))
             {
-                AttachNode topNode = part.findAttachNode("top");
                 float originalTop = topNode.position.y;
                 topNode.position.y = top * height;
                 currentTop = topNode.position.y;
                 float topDifference = currentTop - originalTop;
                 part.transform.Translate(0, -topDifference, 0, part.transform);
-                if (part.findAttachNode("bottom") != null)
+                if (hasBottomNode)
                 {
-                    AttachNode bottomNode = part.findAttachNode("bottom");
                     float originalBottom = bottomNode.position.y;
                     bottomNode.position.y = bottom * height;
                     currentBottom = bottomNode.position.y;
                     float bottomDifference = currentBottom - originalBottom;
-                    if (part.GetAllChildren().Count > 0) { part.GetAllChildren().ForEach(p => p.transform.Translate(0, -(topDifference - bottomDifference), 0, part.transform)); }
+                    bottomNode.attachedPart.transform.Translate(0, -(topDifference - bottomDifference), 0, part.transform);
                 }
             }
 
-
-            if (part.children.Count(p => p.attachMode == AttachModes.SRF_ATTACH) > 0)
+            //Surface attached parts
+            if (part.children.Any(p => p.attachMode == AttachModes.SRF_ATTACH))
             {
-                float xScale = this.part.transform.GetChild(0).localScale.x / originalX;
-                float yScale = this.part.transform.GetChild(0).localScale.y / originalY;
-                List<Part> surfaceAttached = new List<Part>(part.children.Where(p => p.attachMode == AttachModes.SRF_ATTACH));
-                surfaceAttached.Where(p => p.GetAllChildren().Count > 0).ToList().ForEach(p => surfaceAttached.AddRange(p.GetAllChildren()));
-                foreach (Part p in surfaceAttached)
+                float scaleX = this.part.transform.GetChild(0).localScale.x / originalX;
+                float scaleY = this.part.transform.GetChild(0).localScale.y / originalY;
+                foreach (Part child in part.children)
                 {
-                    Vector3 v = p.transform.position - part.transform.position;
-                    p.transform.Translate(v.x * (xScale - 1), v.y * (yScale - 1), v.z * (xScale - 1), part.transform);
+                    if (child.attachMode == AttachModes.SRF_ATTACH)
+                    {
+                        // vv  From https://github.com/Biotronic/TweakScale/blob/master/Scale.cs#L403  vv
+                        Vector3 vX = (child.transform.localPosition + child.transform.localRotation * child.srfAttachNode.position) - part.transform.position;
+
+                        Vector3 vY = child.transform.position - part.transform.position;
+                        child.transform.Translate(vX.x * (scaleX - 1), vY.y * (scaleY - 1), vX.z * (scaleX - 1), part.transform);
+                    }
                 }
             }
+
+            //Node size
+            int nodeSize = Math.Min(size, 3);
+            if (hasBottomNode) { bottomNode.size = nodeSize; }
+            if (hasTopNode) { topNode.size = nodeSize; }
         }
 
         private float GetSize(int id)
         {
-            return this.sizes.First(pair => pair.Key == id).Value;
+            return this.sizes[id];
         }
 
         private int GetId(float size)
@@ -203,25 +187,18 @@ namespace NRAP
             return this.sizes.First(pair => pair.Value == size).Key;
         }
 
-        private bool CanParse(string text)
+        public float GetModuleCost()
         {
-            double value;
-            return double.TryParse(text, out value);
-        }
-
-        private bool CheckRange(float f, float min, float max)
-        {
-            return f > min && f <= max;
+            return this.part.mass * this.weightCost;
         }
         #endregion
 
         #region Functions
         private void Update()
         {
-            if (HighLogic.LoadedSceneIsEditor)
+            if (HighLogic.LoadedSceneIsEditor && (EditorLogic.SortedShipList[0] == this.part || this.part.parent != null))
             {
-                if (EditorLogic.SortedShipList[0] == this.part || this.part.parent != null) { UpdateSize(); }
-                this.currentMass = this.part.mass;
+                UpdateSize();
             }
         }
         #endregion
@@ -236,7 +213,7 @@ namespace NRAP
                 {
                     initiated = true;
                     baseMass = this.part.mass;
-                    this.mass = baseMass.ToString();
+                    this.mass = this.baseMass.ToString();
                     try
                     {
                         size = GetId(this.baseDiameter);
@@ -244,13 +221,14 @@ namespace NRAP
                     catch (Exception)
                     {
                         Debug.LogError("[NRAP]: Invalid base diameter.");
-                        size = 1;
-                        baseDiameter = 1.25f;
+                        this.size = 1;
+                        this.baseDiameter = 1.25f;
                     }
                     if (this.part.findAttachNode("top") != null) { top = this.part.findAttachNode("top").originalPosition.y; }
                     if (this.part.findAttachNode("bottom") != null) { bottom = this.part.findAttachNode("bottom").originalPosition.y; }
                     currentTop = top;
                     currentBottom = bottom;
+                    if (minMass <= 0) { minMass = 0.01f; }
                 }
                 this.window = new Rect(200, 200, 300, 200);
                 if (this.part.findAttachNode("top") != null) { this.part.findAttachNode("top").originalPosition.y = currentTop; }
@@ -260,19 +238,16 @@ namespace NRAP
             baseRadial = this.part.transform.GetChild(0).localScale.x;
             width = GetSize(size) / baseDiameter;
             float.TryParse(mass, out this.part.mass);
-            if (HighLogic.LoadedSceneIsFlight)
-            {
-                UpdateSize();
-                this.currentMass = this.part.mass;
-            }
+            this.currentMass = this.part.TotalMass();
+            if (HighLogic.LoadedSceneIsFlight) { UpdateSize(); }
         }
 
         public override string GetInfo()
         {
-            string infoList = String.Format("Mass range: {0} - {1}t\n", minMass, maxMass);
-            infoList += String.Format("Height multiplier range: {0} - {1}\n", minHeight, maxHeight);
-            infoList += String.Format("Base diameter: {0}m", baseDiameter);
-            return infoList;
+            StringBuilder builder = new StringBuilder().AppendFormat("Mass range: {0} - {1}t\n", maxMass, minMass);
+            builder.AppendFormat("Height multiplier range: {0} - {1}\n", minHeight, maxHeight);
+            builder.AppendFormat("Base diameter: {0}m\n", baseDiameter);
+            return builder.Append("Base diameter range: 0.625m, 1.25m, 2.5m, 3.75m, 5m").ToString();
         }
         #endregion
 
@@ -282,35 +257,45 @@ namespace NRAP
             if (!HighLogic.LoadedSceneIsEditor) { return; }
             if (this.visible)
             {
-                this.window = GUILayout.Window(this.Id, this.window, Window, "NRAP Test Weight", skins.window);
+                this.window = GUILayout.Window(this.id, this.window, Window, "NRAP Test Weight " + Utils.assemblyVersion, skins.window);
             }
         }
 
         private void Window(int id)
         {
-            GUI.DragWindow(new Rect(0, 0, 300, 30));
+            GUI.DragWindow(new Rect(0, 0, this.window.width, 30));
             GUILayout.BeginVertical();
             GUILayout.Space(5);
 
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
-            if (CanParse(mass) && CheckRange(float.Parse(mass), minMass, maxMass)) { GUILayout.Label("Mass (t):", skins.label); }
-            else { GUILayout.Label("Mass (t):", RedLabel); }
+            if (Utils.CanParse(mass) && Utils.CheckRange(float.Parse(mass), minMass, maxMass)) { GUILayout.Label("Dry mass (t):", skins.label); }
+            else { GUILayout.Label("Dry mass (t):", Utils.redLabel); }
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
             GUILayout.FlexibleSpace();
-
             GUILayout.BeginVertical();
             GUILayout.FlexibleSpace();
             mass = GUILayout.TextField(mass, 10, skins.textField, GUILayout.Width(125));
             GUILayout.FlexibleSpace();
             GUILayout.EndVertical();
 
-            if (GUILayout.Button("Apply", skins.button, GUILayout.Width(60))) { if (CheckRange(float.Parse(mass), minMass, maxMass)) { float.TryParse(mass, out this.part.mass); } }
+            if (GUILayout.Button("Apply", skins.button, GUILayout.Width(60)))
+            {
+                float m = 0;
+                float.TryParse(mass, out m);
+                if (Utils.CheckRange(m, minMass, maxMass))
+                {
+                    this.part.mass = m;
+                    this.currentMass = this.part.TotalMass();
+                }
+            }
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("Current mass: " + this.part.mass.ToString() + "t", skins.label);
+            StringBuilder builder = new StringBuilder().AppendFormat("\nCurrent total mass: {0}t ({1}t dry - {2}t resources)\n", this.part.TotalMass(), this.part.mass, this.part.GetResourceMass());
+            builder.AppendFormat("Test weight cost: {0}f (total: {1}f)", GetModuleCost(), this.part.TotalCost());
+            GUILayout.Label(builder.ToString(), skins.label);
             GUILayout.Space(10);
 
             GUILayout.Label("Diameter (m): " + GetSize(size), skins.label);
@@ -321,17 +306,19 @@ namespace NRAP
             height = GUILayout.HorizontalSlider(height, minHeight, maxHeight, skins.horizontalSlider, skins.horizontalSliderThumb);         
             GUILayout.Space(10);
 
-            if (GUILayout.Button("Reset to defaults", skins.button))
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Reset to defaults", skins.button, GUILayout.Width(150)))
             {
-                this.part.mass = baseMass;
-                this.mass = baseMass.ToString();
+                this.part.mass = this.baseMass;
+                this.mass = this.baseMass.ToString();
+                this.currentMass = this.part.TotalMass();
                 size = GetId(baseDiameter);
                 width = 1;
                 height = 1;
             }
 
-            if (GUILayout.Button("Close", skins.button)) { this.visible = false; }
-
+            if (GUILayout.Button("Close", skins.button, GUILayout.Width(150))) { this.visible = false; }
+            GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
         #endregion
