@@ -76,7 +76,7 @@ namespace NRAP
         #region Methods
         private bool CheckParentNode(AttachNode node)
         {
-            return node.attachedPart != null && part.parent != null && node.attachedPart == part.parent;
+            return node.attachedPart != null && this.part.parent != null && node.attachedPart == this.part.parent;
         }
 
         private void UpdateSize()
@@ -86,9 +86,10 @@ namespace NRAP
             bool hasBottomNode = part.TryGetAttachNodeById("bottom", out bottomNode);
             float radialFactor = baseRadial * width;
             float heightFactor = baseHeight * height;
-            float originalX = this.part.transform.GetChild(0).localScale.x;
-            float originalY = this.part.transform.GetChild(0).localScale.y;
-            this.part.transform.GetChild(0).localScale = new Vector3(radialFactor, heightFactor, radialFactor);
+            Transform root = this.part.transform.GetChild(0);
+            float originalX = root.localScale.x;
+            float originalY = root.localScale.y;
+            root.localScale = new Vector3(radialFactor, heightFactor, radialFactor);
 
             //If part is root part
             if ((HighLogic.LoadedSceneIsEditor && this.part == EditorLogic.SortedShipList[0]) || (HighLogic.LoadedSceneIsFlight && this.vessel.rootPart == this.part))
@@ -156,8 +157,8 @@ namespace NRAP
             //Surface attached parts
             if (part.children.Any(p => p.attachMode == AttachModes.SRF_ATTACH))
             {
-                float scaleX = this.part.transform.GetChild(0).localScale.x / originalX;
-                float scaleY = this.part.transform.GetChild(0).localScale.y / originalY;
+                float scaleX = root.localScale.x / originalX;
+                float scaleY = root.localScale.y / originalY;
                 foreach (Part child in part.children)
                 {
                     if (child.attachMode == AttachModes.SRF_ATTACH)
