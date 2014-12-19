@@ -188,7 +188,7 @@ namespace NRAP
             return this.sizes.First(pair => pair.Value == size).Key;
         }
 
-        public float GetModuleCost()
+        public float GetModuleCost(float defaultCost)
         {
             return this.part.mass * this.weightCost;
         }
@@ -197,6 +197,7 @@ namespace NRAP
         #region Functions
         private void Update()
         {
+            if (!CompatibilityChecker.IsAllCompatible()) { return; }
             if (HighLogic.LoadedSceneIsEditor && (EditorLogic.SortedShipList[0] == this.part || this.part.parent != null))
             {
                 UpdateSize();
@@ -207,7 +208,7 @@ namespace NRAP
         #region Overrides
         public override void OnStart(PartModule.StartState state)
         {
-            if (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor) { return; }
+            if (!CompatibilityChecker.IsAllCompatible() || (!HighLogic.LoadedSceneIsFlight && !HighLogic.LoadedSceneIsEditor)) { return; }
             if (HighLogic.LoadedSceneIsEditor)
             {
                 if (!initiated)
@@ -245,6 +246,7 @@ namespace NRAP
 
         public override string GetInfo()
         {
+            if (!CompatibilityChecker.IsAllCompatible()) { return string.Empty; }
             StringBuilder builder = new StringBuilder().AppendFormat("Mass range: {0} - {1}t\n", maxMass, minMass);
             builder.AppendFormat("Height multiplier range: {0} - {1}\n", minHeight, maxHeight);
             builder.AppendFormat("Base diameter: {0}m\n", baseDiameter);
@@ -255,7 +257,7 @@ namespace NRAP
         #region GUI
         private void OnGUI()
         {
-            if (!HighLogic.LoadedSceneIsEditor) { return; }
+            if (! CompatibilityChecker.IsAllCompatible() || !HighLogic.LoadedSceneIsEditor) { return; }
             if (this.visible)
             {
                 this.window = GUILayout.Window(this.id, this.window, Window, "NRAP Test Weight " + Utils.assemblyVersion, skins.window);
@@ -295,7 +297,7 @@ namespace NRAP
             GUILayout.EndHorizontal();
 
             StringBuilder builder = new StringBuilder().AppendFormat("\nCurrent total mass: {0}t ({1}t dry - {2}t resources)\n", this.part.TotalMass(), this.part.mass, this.part.GetResourceMass());
-            builder.AppendFormat("Test weight cost: {0}f (total: {1}f)", GetModuleCost(), this.part.TotalCost());
+            builder.AppendFormat("Test weight cost: {0}f (total: {1}f)", GetModuleCost(0), this.part.TotalCost());
             GUILayout.Label(builder.ToString(), skins.label);
             GUILayout.Space(10);
 

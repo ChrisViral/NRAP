@@ -21,7 +21,7 @@ namespace NRAP
         /// </summary>
         public static float TotalCost(this Part part)
         {
-            return part.partInfo.cost + part.GetModuleCosts();
+            return part.partInfo.cost + part.GetModuleCosts(part.partInfo.cost);
         }
 
         /// <summary>

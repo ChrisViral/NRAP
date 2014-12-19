@@ -10,6 +10,7 @@ namespace NRAP
     public static class Utils
     {
         #region Propreties
+        private static string _assemblyVersion = string.Empty;
         /// <summary>
         /// Returns the assembly informational version of the mod
         /// </summary>
@@ -17,13 +18,17 @@ namespace NRAP
         {
             get
             {
-                System.Version version = new System.Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion);
-                if (version.Revision == 0)
+                if (_assemblyVersion == string.Empty)
                 {
-                    if (version.Build == 0) { return "v" + version.ToString(2); }
-                    return "v" + version.ToString(3);
+                    System.Version version = new System.Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion);
+                    if (version.Revision == 0)
+                    {
+                        if (version.Build == 0) { _assemblyVersion = "v" + version.ToString(2); }
+                        else { _assemblyVersion = "v" + version.ToString(3); }
+                    }
+                    else { _assemblyVersion = "v" + version.ToString(); }
                 }
-                return "v" + version.ToString();
+                return _assemblyVersion;
             }
         }
 
