@@ -82,10 +82,10 @@ namespace NRAP
         private void UpdateSize()
         {
             AttachNode topNode = null, bottomNode = null;
-            bool hasTopNode = part.TryGetAttachNodeById("top", out topNode);
-            bool hasBottomNode = part.TryGetAttachNodeById("bottom", out bottomNode);
-            float radialFactor = baseRadial * width;
-            float heightFactor = baseHeight * height;
+            bool hasTopNode = this.part.TryGetAttachNodeById("top", out topNode);
+            bool hasBottomNode = this.part.TryGetAttachNodeById("bottom", out bottomNode);
+            float radialFactor = this.baseRadial * this.width;
+            float heightFactor = this.baseHeight * this.height;
             Transform root = this.part.transform.GetChild(0);
             float originalX = root.localScale.x;
             float originalY = root.localScale.y;
@@ -176,6 +176,8 @@ namespace NRAP
             int nodeSize = Math.Min(size, 3);
             if (hasBottomNode) { bottomNode.size = nodeSize; }
             if (hasTopNode) { topNode.size = nodeSize; }
+
+            if (HighLogic.LoadedSceneIsFlight) { UpdateDragCube(); }
         }
 
         private float GetSize(int id)
@@ -191,6 +193,15 @@ namespace NRAP
         public float GetModuleCost(float defaultCost)
         {
             return this.part.mass * this.weightCost;
+        }
+
+        private void UpdateDragCube()
+        {
+            DragCube cube = DragCubeSystem.Instance.RenderProceduralDragCube(this.part);
+            DragCubeList cubes = this.part.DragCubes;
+            cubes.ClearCubes();
+            cubes.Cubes.Add(cube);
+            cubes.ResetCubeWeights();
         }
         #endregion
 
