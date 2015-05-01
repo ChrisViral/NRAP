@@ -177,7 +177,7 @@ namespace NRAP
             if (hasBottomNode) { bottomNode.size = nodeSize; }
             if (hasTopNode) { topNode.size = nodeSize; }
 
-            if (HighLogic.LoadedSceneIsFlight) { UpdateDragCube(); }
+            if (HighLogic.LoadedSceneIsFlight) { StartCoroutine(UpdateDragCube()); }
         }
 
         private float GetSize(int id)
@@ -195,8 +195,12 @@ namespace NRAP
             return this.part.mass * this.weightCost;
         }
 
-        private void UpdateDragCube()
+        private IEnumerator<YieldInstruction> UpdateDragCube()
         {
+            while (!FlightGlobals.ready || this.part.packed || !this.vessel.loaded)
+            {
+                yield return new WaitForFixedUpdate();
+            }
             DragCube cube = DragCubeSystem.Instance.RenderProceduralDragCube(this.part);
             DragCubeList cubes = this.part.DragCubes;
             cubes.ClearCubes();
