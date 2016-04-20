@@ -1,54 +1,51 @@
 ﻿using System.Reflection;
 using System.Diagnostics;
 using UnityEngine;
+using Version = System.Version;
 
 /* NRAP Test Weights is licensed under CC-BY-SA. All Rights for the original mod and for attribution 
  * go to Kotysoft, excepted for this code, which is the work of Christophe Savard (stupid_chris).*/
 
 namespace NRAP
 {
-    public static class Utils
+    public static class NRAPUtils
     {
         #region Propreties
-        private static string _assemblyVersion = string.Empty;
+        private static readonly string assemblyVersion;
         /// <summary>
         /// Returns the assembly informational version of the mod
         /// </summary>
-        public static string assemblyVersion
+        public static string AssemblyVersion
         {
-            get
-            {
-                if (_assemblyVersion == string.Empty)
-                {
-                    System.Version version = new System.Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion);
-                    if (version.Revision == 0)
-                    {
-                        if (version.Build == 0) { _assemblyVersion = "v" + version.ToString(2); }
-                        else { _assemblyVersion = "v" + version.ToString(3); }
-                    }
-                    else { _assemblyVersion = "v" + version.ToString(); }
-                }
-                return _assemblyVersion;
-            }
+            get { return assemblyVersion; }
         }
 
-        private static GUIStyle _redLabel = null;
+        private static readonly GUIStyle redLabel;
         /// <summary>
         /// A red GUI label
         /// </summary>
-        public static GUIStyle redLabel
+        public static GUIStyle RedLabel
         {
-            get
+            get { return redLabel; }
+        }
+        #endregion
+
+        #region Constructors
+        static NRAPUtils()
+        {
+            Version version = new Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion);
+            if (version.Revision == 0)
             {
-                if (_redLabel == null)
-                {
-                    GUIStyle style = new GUIStyle(HighLogic.Skin.label);
-                    style.normal.textColor = XKCDColors.Red;
-                    style.hover.textColor = XKCDColors.Red;
-                    _redLabel = style;
-                }
-                return _redLabel;
+                if (version.Build == 0) { assemblyVersion = "v" + version.ToString(2); }
+                else { assemblyVersion = "v" + version.ToString(3); }
             }
+            else { assemblyVersion = "v" + version; }
+
+            redLabel = new GUIStyle(HighLogic.Skin.label)
+            {
+                normal = { textColor = XKCDColors.Red },
+                hover = { textColor = XKCDColors.Red }
+            };
         }
         #endregion
 

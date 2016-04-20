@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-/* NRAP Test Weights is licensed under CC-BY-SA. All Rights for the original mod and for attribution 
+﻿/* NRAP Test Weights is licensed under CC-BY-SA. All Rights for the original mod and for attribution 
  * go to Kotysoft, excepted for this code, which is the work of Christophe Savard (stupid_chris).*/
 
 namespace NRAP
@@ -13,7 +11,7 @@ namespace NRAP
         /// </summary>
         public static float TotalMass(this Part part)
         {
-            return part.physicalSignificance != Part.PhysicalSignificance.NONE ? part.mass + part.GetResourceMass() : 0f;
+            return part.physicalSignificance != Part.PhysicalSignificance.NONE ? part.mass + part.GetResourceMass() : 0;
         }
 
         /// <summary>

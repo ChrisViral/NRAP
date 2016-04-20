@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("NRAP")]
-[assembly: AssemblyCopyright("kotysoft - stupid_chris © CC-BY-SA 2014")]
+[assembly: AssemblyCopyright("kotysoft - stupid_chris © CC-BY-SA 2014-2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -32,4 +32,4 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.5.*")]
-[assembly: AssemblyInformationalVersion("1.5.0.4")]
+[assembly: AssemblyInformationalVersion("1.5.1.0")]
