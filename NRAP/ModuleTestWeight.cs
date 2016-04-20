@@ -9,36 +9,45 @@ using UnityEngine;
 
 namespace NRAP
 {
-    public class ModuleTestWeight : PartModule, IPartCostModifier
+    public class ModuleTestWeight : PartModule, IPartMassModifier, IPartCostModifier
     {      
         #region KSPFields
         [KSPField]
         public float maxMass = 100;
+
         [KSPField(isPersistant = true)]
         public float minMass = 0.01f;
+
         [KSPField]
         public float maxHeight = 5;
+
         [KSPField]
         public float minHeight = 0.2f;
+
         [KSPField]
         public float weightCost = 0.1f;
+
         [KSPField(isPersistant = true)]
         public float baseDiameter = 1.25f;
+
         [KSPField(isPersistant = true, guiActive = true, guiFormat = "0.###", guiName = "Total mass", guiUnits = "t", guiActiveEditor = true)]
         public float currentMass;
-        #endregion
 
-        #region Persistent values
         [KSPField(isPersistant = true)]
-        private string mass = string.Empty;
+        public string mass = string.Empty;
+
         [KSPField(isPersistant = true)]
         private int size = 1;
+
         [KSPField(isPersistant = true)]
-        public float baseMass;
+        public float deltaMass;
+
         [KSPField(isPersistant = true)]
         private float height = 1, top, bottom;
+
         [KSPField(isPersistant = true)]
         private float currentBottom, currentTop;
+
         [KSPField(isPersistant = true)]
         public bool initiated;
         #endregion
@@ -170,7 +179,7 @@ namespace NRAP
             int nodeSize = Math.Min(this.size, 3);
             if (hasBottomNode) { bottomNode.size = nodeSize; }
             if (hasTopNode) { topNode.size = nodeSize; }
-
+            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
             if (HighLogic.LoadedSceneIsFlight) { StartCoroutine(UpdateDragCube()); }
         }
 
@@ -190,6 +199,16 @@ namespace NRAP
         }
 
         public ModifierChangeWhen GetModuleCostChangeWhen()
+        {
+            return ModifierChangeWhen.FIXED;
+        }
+
+        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
+        {
+            return this.deltaMass;
+        }
+
+        public ModifierChangeWhen GetModuleMassChangeWhen()
         {
             return ModifierChangeWhen.FIXED;
         }
@@ -228,11 +247,11 @@ namespace NRAP
             if (GUILayout.Button("Apply", GUILayout.Width(60)))
             {
                 float m;
-                float.TryParse(this.mass, out m);
-                if (NRAPUtils.CheckRange(m, this.minMass, this.maxMass))
+                if (float.TryParse(this.mass, out m) && NRAPUtils.CheckRange(m, this.minMass, this.maxMass))
                 {
-                    this.part.mass = m;
+                    this.deltaMass = m - this.part.partInfo.partPrefab.mass;
                     this.currentMass = this.part.TotalMass();
+                    GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
                 }
             }
             GUILayout.EndHorizontal();
@@ -253,8 +272,8 @@ namespace NRAP
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Reset to defaults", GUILayout.Width(150)))
             {
-                this.part.mass = this.baseMass;
-                this.mass = this.baseMass.ToString();
+                this.deltaMass = 0;
+                this.mass = this.part.partInfo.partPrefab.mass.ToString();
                 this.currentMass = this.part.TotalMass();
                 this.size = GetId(this.baseDiameter);
                 this.width = 1;
@@ -313,8 +332,7 @@ namespace NRAP
                 if (!this.initiated)
                 {
                     this.initiated = true;
-                    this.baseMass = this.part.mass;
-                    this.mass = this.baseMass.ToString();
+                    this.mass = this.part.mass.ToString();
                     try
                     {
                         this.size = GetId(this.baseDiameter);
@@ -340,8 +358,7 @@ namespace NRAP
             this.baseHeight = this.part.transform.GetChild(0).localScale.y;
             this.baseRadial = this.part.transform.GetChild(0).localScale.x;
             this.width = GetSize(this.size) / this.baseDiameter;
-            float.TryParse(this.mass, out this.part.mass);
-            this.currentMass = this.part.TotalMass();
+            this.currentMass = this.part.partInfo.partPrefab.mass + this.deltaMass;
 
             if (HighLogic.LoadedSceneIsFlight) { UpdateSize(); }
         }
