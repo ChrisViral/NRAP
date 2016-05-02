@@ -76,8 +76,6 @@ namespace NRAP
         }
         #endregion
 
-        public int One => 1;
-
         #region Methods
         private bool CheckParentNode(AttachNode node)
         {
