@@ -71,15 +71,17 @@ namespace NRAP
         [KSPEvent(active = true, guiActive = false, guiActiveEditor = true, guiName = "Toggle window")]
         public void GUIToggle()
         {
-            CloseOpenWindow();
+            CloseOpenedWindow();
             this.visible = !this.visible;
         }
         #endregion
 
+        public int One => 1;
+
         #region Methods
         private bool CheckParentNode(AttachNode node)
         {
-            return node.attachedPart != null && this.part.parent != null && node.attachedPart == this.part.parent;
+            return node.attachedPart != null && node.attachedPart == this.part?.parent;
         }
 
         private void UpdateSize()
@@ -179,39 +181,13 @@ namespace NRAP
             int nodeSize = Math.Min(this.size, 3);
             if (hasBottomNode) { bottomNode.size = nodeSize; }
             if (hasTopNode) { topNode.size = nodeSize; }
-            GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship);
-            if (HighLogic.LoadedSceneIsFlight) { StartCoroutine(UpdateDragCube()); }
+            if (HighLogic.LoadedSceneIsEditor) { GameEvents.onEditorShipModified.Fire(EditorLogic.fetch.ship); }
+            else if (HighLogic.LoadedSceneIsFlight) { StartCoroutine(UpdateDragCube()); }
         }
 
-        private float GetSize(int id)
-        {
-            return this.sizes[id];
-        }
+        private float GetSize(int id) => this.sizes[id];
 
-        private int GetId(float size)
-        {
-            return this.sizes.First(pair => pair.Value == size).Key;
-        }
-
-        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit)
-        {
-            return this.part.mass * this.weightCost;
-        }
-
-        public ModifierChangeWhen GetModuleCostChangeWhen()
-        {
-            return ModifierChangeWhen.FIXED;
-        }
-
-        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit)
-        {
-            return this.deltaMass;
-        }
-
-        public ModifierChangeWhen GetModuleMassChangeWhen()
-        {
-            return ModifierChangeWhen.FIXED;
-        }
+        private int GetID(float size) => this.sizes.First(p => p.Value == size).Key;
 
         private IEnumerator<YieldInstruction> UpdateDragCube()
         {
@@ -261,11 +237,11 @@ namespace NRAP
             GUILayout.Label(builder.ToString());
             GUILayout.Space(10);
 
-            GUILayout.Label("Diameter (m): " + GetSize(this.size));
+            GUILayout.Label($"Diameter (m): {{ {GetSize(this.size)}");
             this.size = (int)GUILayout.HorizontalSlider(this.size, 0, 4);
             this.width = GetSize(this.size) / this.baseDiameter;
 
-            GUILayout.Label("Height multiplier: " + this.height.ToString("0.000"));
+            GUILayout.Label($"Height multiplier: {this.height.ToString("0.000")}");
             this.height = GUILayout.HorizontalSlider(this.height, this.minHeight, this.maxHeight);
             GUILayout.Space(10);
 
@@ -275,7 +251,7 @@ namespace NRAP
                 this.deltaMass = 0;
                 this.mass = this.part.partInfo.partPrefab.mass.ToString();
                 this.currentMass = this.part.TotalMass();
-                this.size = GetId(this.baseDiameter);
+                this.size = GetID(this.baseDiameter);
                 this.width = 1;
                 this.height = 1;
             }
@@ -284,10 +260,18 @@ namespace NRAP
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
+
+        public float GetModuleCost(float defaultCost, ModifierStagingSituation sit) => this.part.mass * this.weightCost;
+
+        public ModifierChangeWhen GetModuleCostChangeWhen() => ModifierChangeWhen.FIXED;
+
+        public float GetModuleMass(float defaultMass, ModifierStagingSituation sit) => this.deltaMass;
+
+        public ModifierChangeWhen GetModuleMassChangeWhen() => ModifierChangeWhen.FIXED;
         #endregion
 
         #region Static methods
-        private static void CloseOpenWindow()
+        public void CloseOpenedWindow()
         {
             foreach (Part p in EditorLogic.SortedShipList)
             {
@@ -335,7 +319,7 @@ namespace NRAP
                     this.mass = this.part.mass.ToString();
                     try
                     {
-                        this.size = GetId(this.baseDiameter);
+                        this.size = GetID(this.baseDiameter);
                     }
                     catch (Exception)
                     {

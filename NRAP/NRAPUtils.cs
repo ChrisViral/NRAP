@@ -11,23 +11,15 @@ namespace NRAP
     public static class NRAPUtils
     {
         #region Propreties
-        private static readonly string assemblyVersion;
         /// <summary>
         /// Returns the assembly informational version of the mod
         /// </summary>
-        public static string AssemblyVersion
-        {
-            get { return assemblyVersion; }
-        }
+        public static string AssemblyVersion { get; }
 
-        private static readonly GUIStyle redLabel;
         /// <summary>
         /// A red GUI label
         /// </summary>
-        public static GUIStyle RedLabel
-        {
-            get { return redLabel; }
-        }
+        public static GUIStyle RedLabel { get; }
         #endregion
 
         #region Constructors
@@ -36,12 +28,12 @@ namespace NRAP
             Version version = new Version(FileVersionInfo.GetVersionInfo(Assembly.GetExecutingAssembly().Location).ProductVersion);
             if (version.Revision == 0)
             {
-                if (version.Build == 0) { assemblyVersion = "v" + version.ToString(2); }
-                else { assemblyVersion = "v" + version.ToString(3); }
+                if (version.Build == 0) { AssemblyVersion = "v" + version.ToString(2); }
+                else { AssemblyVersion = "v" + version.ToString(3); }
             }
-            else { assemblyVersion = "v" + version; }
+            else { AssemblyVersion = "v" + version; }
 
-            redLabel = new GUIStyle(HighLogic.Skin.label)
+            RedLabel = new GUIStyle(HighLogic.Skin.label)
             {
                 normal = { textColor = XKCDColors.Red },
                 hover = { textColor = XKCDColors.Red }
@@ -66,10 +58,7 @@ namespace NRAP
         /// <param name="f">Float to check</param>
         /// <param name="min">Minimum bound</param>
         /// <param name="max">Maximum bound</param>
-        public static bool CheckRange(float f, float min, float max)
-        {
-            return f > min && f <= max;
-        }
+        public static bool CheckRange(float f, float min, float max) => f > min && f <= max;
         #endregion
     }
 }

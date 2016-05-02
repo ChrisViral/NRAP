@@ -30,7 +30,7 @@ namespace NRAP
         public static bool TryGetAttachNodeById(this Part part, string nodeId, out AttachNode node)
         {
             node = part.findAttachNode(nodeId);
-            return node != null;
+            return part.findAttachNode(nodeId) != null;
         }
         #endregion
     }
