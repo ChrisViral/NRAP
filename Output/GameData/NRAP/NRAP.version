@@ -1,0 +1,33 @@
+{
+	"NAME": "NRAP",
+	"URL": "https://raw.githubusercontent.com/StupidChris/NRAP/master/Output/GameData/NRAP/NRAP.version",
+
+	"VERSION":
+	{
+		"MAJOR": 1,
+		"MINOR": 5,
+		"PATCH": 1,
+		"BUILD": 1
+	},
+
+	"KSP_VERSION":
+	{
+		"MAJOR": 1,
+		"MINOR": 1,
+		"PATCH": 2
+	},
+
+	"KSP_VERSION_MIN":
+	{
+		"MAJOR": 1,
+		"MINOR": 1,
+		"PATCH": 2
+	},
+
+	"KSP_VERSION_MAX":
+	{
+		"MAJOR": 1,
+		"MINOR": 1,
+		"PATCH": 99
+	}
+}
